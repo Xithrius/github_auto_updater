@@ -1,6 +1,5 @@
 use std::fs;
 
-use env_logger::Env;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use tracing::{event, Level};
@@ -34,11 +33,10 @@ fn get_assets() -> Result<()> {
 }
 
 fn main() {
-    let env = Env::default()
-        .filter_or("MY_LOG_LEVEL", "trace")
-        .write_style_or("MY_LOG_STYLE", "always");
-
-    env_logger::init_from_env(env);
+    tracing_subscriber::fmt()
+        .event_format(tracing_subscriber::fmt::format().pretty())
+        .with_max_level(Level::DEBUG)
+        .init();
 
     get_assets().expect("Foo");
 }

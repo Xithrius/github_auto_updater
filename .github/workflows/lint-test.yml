@@ -1,0 +1,80 @@
+name: Build, test & lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  MUTAGEN_THRESHOLD: 100.0
+  MUTAGEN_COMMIT: f8249256c40769c916b5b00bd284f204d5540588
+  CRATE_PATHS: .
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build
+        run: cargo build --all-targets
+
+      - name: Test
+        run: cargo test
+
+  lint-rust:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+          override: true
+
+      - name: Run clippy
+        run: cargo clippy --all-targets
+
+      - name: Run rustfmt
+        run: cargo fmt -- --check
+
+      - name: Run cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+
+  lint-generic:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install other dependencies
+        run: sudo apt-get install moreutils dos2unix
+
+      - name: Check encoding
+        run: isutf8 **/*
+
+      - name: Check line endings
+        run: bash .github/workflows/scripts/check_line_endings.sh
+
+      - name: Check TODOs
+        run: bash .github/workflows/scripts/check_todos.sh

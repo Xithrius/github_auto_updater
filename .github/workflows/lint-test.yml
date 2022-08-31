@@ -52,7 +52,7 @@ jobs:
           override: true
 
       - name: Run clippy
-        run: cargo clippy --all-targets
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Run rustfmt
         run: cargo fmt -- --check
